@@ -17,11 +17,11 @@ import (
 
 func main() {
 	// {"jsonrpc": "2.0", "id": "99", "method": "getBlock", "params": [100955115]}
-	body := map[string]interface{}{
+	body := map[string]any{
 		"jsonrpc": "2.0",
 		"id":      "99",
 		"method":  "getBlock",
-		"params":  []any{210384016, map[string]interface{}{"encoding": "base64", "maxSupportedTransactionVersion": 0}},
+		"params":  []any{210384016, map[string]any{"encoding": "base64", "maxSupportedTransactionVersion": 0}},
 	}
 
 	servers := []string{
