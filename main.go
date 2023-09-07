@@ -3,29 +3,70 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 	"github.com/goware/urlx"
 	"k8s.io/klog/v2"
 )
 
+type StringSliceVar struct {
+	Value []string
+}
+
+func (s *StringSliceVar) Set(v string) error {
+	s.Value = append(s.Value, v)
+	return nil
+}
+
+func (s *StringSliceVar) String() string {
+	return strings.Join(s.Value, ",")
+}
+
 func main() {
 	// {"jsonrpc": "2.0", "id": "99", "method": "getBlock", "params": [100955115]}
-	body := map[string]any{
-		"jsonrpc": "2.0",
-		"id":      "99",
-		"method":  "getBlock",
-		"params":  []any{210384016, map[string]any{"encoding": "base64", "maxSupportedTransactionVersion": 0}},
+	// body := map[string]any{
+	// 	"jsonrpc": "2.0",
+	// 	"id":      "99",
+	// 	"method":  "getTransaction",
+	// 	"params": []any{
+	// 		"3ZoKehx5haKmM1r74Ni9Ezxc6Sa2vLqRQgKisETGUjLK3KX45yRTAbN4xZ4LXt9jXBBozvjQ4qTz5eJtq3PD6j2P",
+	// 		map[string]any{
+	// 			"encoding":                       "json",
+	// 			"maxSupportedTransactionVersion": 0,
+	// 		},
+	// 	},
+	// }
+	var noSaveBody bool
+	var fieldsToIgnore StringSliceVar
+	flag.BoolVar(&noSaveBody, "no-save-body", false, "Don't save the response bodies to disk.")
+	flag.Var(&fieldsToIgnore, "ignore-field", "Ignore the given fields in the diff.")
+	flag.Parse()
+	// re request body is the args:
+	bodyString := flag.Arg(0)
+	if bodyString == "" {
+		panic("no body provided")
 	}
+	// try to parse the body as json:
+	var body map[string]any
+	err := json.Unmarshal([]byte(bodyString), &body)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("body:")
+	spew.Dump(body)
 
 	servers := []string{
-		"http://127.0.0.1:8899",
+		// "https://rpc.old-faithful.net",
+		"http://localhost:8899",
 		"https://api.mainnet-beta.solana.com",
 	}
 
@@ -41,7 +82,7 @@ func main() {
 	}
 
 	runID := time.Now().Unix()
-	err := os.MkdirAll("bodies", 0o755)
+	err = os.MkdirAll("bodies", 0o755)
 	if err != nil {
 		panic(err)
 	}
@@ -67,8 +108,11 @@ func main() {
 			continue
 		}
 		klog.Infof("Comparing responses from %s and %s (this might take a while)", servers[i-1], serverURL)
-		if !cmp.Equal(parsedResult, responses[i-1]) {
-			if diff := cmp.Diff(responses[i-1], parsedResult); diff != "" {
+		options := []cmp.Option{
+			IgnoreFields(fieldsToIgnore.Value...),
+		}
+		if !cmp.Equal(parsedResult, responses[i-1], options...) {
+			if diff := cmp.Diff(responses[i-1], parsedResult, options...); diff != "" {
 				fmt.Printf(
 					"mismatch : \n- = have in %s and not in %s\n+ = have in %s and not in %s\n",
 					servers[i-1],
@@ -90,8 +134,29 @@ func main() {
 				}
 				panic("mismatch (-want +got):")
 			}
+		} else {
+			klog.Infof(green("Responses from %s and %s are EQUAL"), servers[i-1], serverURL)
 		}
 	}
+}
+
+func green(s string) string {
+	return fmt.Sprintf("\033[32m%s\033[0m", s)
+}
+
+// return a f cmd.Diff option that ignores the given fields (by name, at any depth).
+func IgnoreFields(fields ...string) cmp.Option {
+	return cmp.FilterPath(func(p cmp.Path) bool {
+		for _, field := range fields {
+			for _, path := range p {
+				stringified := path.String()
+				if strings.Contains(stringified, fmt.Sprintf("%q", field)) {
+					return true
+				}
+			}
+		}
+		return false
+	}, cmp.Ignore())
 }
 
 func mustAbsOsPath(path string) string {

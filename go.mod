@@ -3,6 +3,7 @@ module github.com/gagliardetto/diff-http-json
 go 1.20
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/google/go-cmp v0.5.5
 	github.com/goware/urlx v0.3.2
 	k8s.io/klog/v2 v2.100.1
