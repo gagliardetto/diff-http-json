@@ -34,9 +34,9 @@ diff-http-json '{
 	"id": "99",
 	"method": "getBlock",
 	"params": [
-		"3ZoKehx5haKmM1r74Ni9Ezxc6Sa2vLqRQgKisETGUjLK3KX45yRTAbN4xZ4LXt9jXBBozvjQ4qTz5eJtq3PD6j2P",
+		211247999,
 		{
-			"encoding": "json",
+			"encoding": "base64",
 			"maxSupportedTransactionVersion": 0
 		}
 	]
