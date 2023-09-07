@@ -11,7 +11,10 @@ diff-http-json [options] <body>
 # diff getTransaction
 
 ```
-diff-http-json '{
+diff-http-json \
+	--rpc=http://localhost:8899 \
+	--rpc=https://api.mainnet-beta.solana.com \
+	'{
 	"jsonrpc": "2.0",
 	"id": "99",
 	"method": "getTransaction",
@@ -29,7 +32,10 @@ diff-http-json '{
 # diff getBlock
 
 ```
-diff-http-json '{
+diff-http-json \
+	--rpc=http://localhost:8899 \
+	--rpc=https://api.mainnet-beta.solana.com \
+	'{
 	"jsonrpc": "2.0",
 	"id": "99",
 	"method": "getBlock",

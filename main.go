@@ -47,8 +47,10 @@ func main() {
 	// }
 	var noSaveBody bool
 	var fieldsToIgnore StringSliceVar
+	var rpcList StringSliceVar
 	flag.BoolVar(&noSaveBody, "no-save-body", false, "Don't save the response bodies to disk.")
-	flag.Var(&fieldsToIgnore, "ignore-field", "Ignore the given fields in the diff.")
+	flag.Var(&fieldsToIgnore, "ignore-field", "Ignore the given field in the diff. Can be specified multiple times.")
+	flag.Var(&rpcList, "rpc", "The RPC server to send the request to. Can be specified multiple times.")
 	flag.Parse()
 	// re request body is the args:
 	bodyString := flag.Arg(0)
@@ -64,11 +66,7 @@ func main() {
 	fmt.Println("body:")
 	spew.Dump(body)
 
-	servers := []string{
-		// "https://rpc.old-faithful.net",
-		"http://localhost:8899",
-		"https://api.mainnet-beta.solana.com",
-	}
+	servers := rpcList.Value
 
 	// unique the servers:
 	{
