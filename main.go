@@ -67,6 +67,9 @@ func main() {
 	spew.Dump(body)
 
 	servers := rpcList.Value
+	if len(servers) == 0 {
+		panic("no servers provided; use --rpc=https://api.mainnet-beta.solana.com (can be specified multiple times))")
+	}
 
 	// unique the servers:
 	{
